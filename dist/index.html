@@ -1,0 +1,141 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Story App</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#2196f3"><style>.skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #000;
+            color: white;
+            padding: 8px;
+            z-index: 100;
+        }
+        .skip-link:focus {
+            top: 0;
+        }</style><script defer="defer" src="/bundle.js"></script></head><body><header><a href="#" class="app-logo" tabindex="1"><i class="fas fa-book-reader"></i> <span>Story App</span></a><nav><ul><li><a href="#/"><i class="fas fa-home"></i><span>Home</span></a></li><li><a href="#/stories"><i class="fas fa-book-open"></i><span>Stories</span></a></li><li><a href="#/saved-stories"><i class="fas fa-bookmark"></i><span>Saved Stories</span></a></li><li><a href="#/add-story"><i class="fas fa-plus"></i><span>Add Story</span></a></li></ul></nav><div class="header-buttons"><button id="auth-button" class="auth-button"><i class="fas fa-sign-in-alt"></i> <span>Sign In</span></button> <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button> <button id="notification-button" class="notification-button" aria-label="Enable notifications"><i class="fas fa-bell"></i></button></div></header><div id="skip-container"></div><main id="app"></main><script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script><script>// Theme toggle functionality
+        const themeToggle = document.querySelector('.theme-toggle');
+        const icon = themeToggle.querySelector('i');
+        
+        // Function to set theme
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            updateIcon(theme);
+        }
+
+        // Function to update icon
+        function updateIcon(theme) {
+            if (theme === 'light') {
+                icon.className = 'fas fa-moon';
+            } else {
+                icon.className = 'fas fa-sun';
+            }
+        }
+
+        // Check for saved theme preference or use system preference
+        const savedTheme = localStorage.getItem('theme');
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        const initialTheme = savedTheme || systemTheme;
+        
+        setTheme(initialTheme);
+
+        // Add click event listener
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(newTheme);
+            
+            // Add animation
+            icon.classList.add('rotate');
+            setTimeout(() => {
+                icon.classList.remove('rotate');
+            }, 500);
+        });
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if (!localStorage.getItem('theme')) {
+                setTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+
+        // Push Notification Setup
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            window.addEventListener('load', async () => {
+                try {
+                    console.log('Starting service worker registration...');
+                    const registration = await navigator.serviceWorker.register('/sw.js');
+                    console.log('Service Worker registered successfully:', registration);
+
+                    // Wait for service worker to be fully active
+                    if (registration.active) {
+                        console.log('Service Worker is active');
+                    } else {
+                        console.log('Waiting for Service Worker to become active...');
+                        await new Promise(resolve => {
+                            if (registration.active) {
+                                resolve();
+                            } else {
+                                registration.addEventListener('activate', () => resolve());
+                            }
+                        });
+                    }
+
+                    const notificationButton = document.getElementById('notification-button');
+                    const notificationIcon = notificationButton.querySelector('i');
+
+                    // Check if notifications are already enabled
+                    const permission = await Notification.permission;
+                    console.log('Current notification permission:', permission);
+                    
+                    if (permission === 'granted') {
+                        notificationButton.classList.add('active');
+                        notificationIcon.className = 'fas fa-bell-slash';
+                        console.log('Notifications already enabled');
+                    }
+
+                    notificationButton.addEventListener('click', async () => {
+                        try {
+                            console.log('Requesting notification permission...');
+                            const permission = await Notification.requestPermission();
+                            console.log('Notification permission result:', permission);
+                            
+                            if (permission === 'granted') {
+                                console.log('Attempting to subscribe to push notifications...');
+                                
+                                // Ensure service worker is active before subscribing
+                                if (!registration.active) {
+                                    throw new Error('Service Worker is not active yet');
+                                }
+
+                                const subscription = await registration.pushManager.subscribe({
+                                    userVisibleOnly: true,
+                                    applicationServerKey: 'BCCs2eonMI-6H2ctvFaWg-UYdDv387Vno_bzUzALpB442r2lCnsHmtrx8biyPi_E-1fSGABK_Qs_GlvPoJJqxbk'
+                                });
+                                console.log('Push subscription successful:', subscription);
+                                
+                                // Update UI to show notifications are enabled
+                                notificationButton.classList.add('active');
+                                notificationIcon.className = 'fas fa-bell-slash';
+                                
+                                // Show success message
+                                alert('Notifikasi berhasil diaktifkan! Anda akan menerima pemberitahuan ketika ada cerita baru.');
+                            } else if (permission === 'denied') {
+                                console.log('Notification permission denied');
+                                alert('Anda telah menolak izin notifikasi. Untuk mengaktifkan notifikasi, silakan ubah pengaturan browser Anda.');
+                            } else {
+                                console.log('Notification permission default');
+                                alert('Anda perlu mengizinkan notifikasi untuk menggunakan fitur ini.');
+                            }
+                        } catch (error) {
+                            console.error('Error in notification setup:', error);
+                            alert('Gagal mengaktifkan notifikasi: ' + error.message);
+                        }
+                    });
+                } catch (error) {
+                    console.error('Service Worker registration failed:', error);
+                    alert('Gagal mendaftarkan service worker: ' + error.message);
+                }
+            });
+        } else {
+            console.log('Service Worker or PushManager not supported');
+            const notificationButton = document.getElementById('notification-button');
+            notificationButton.style.display = 'none';
+        }</script></body></html>

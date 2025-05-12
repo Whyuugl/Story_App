@@ -1,0 +1,14 @@
+Nama: Wahyu Galang Ramadhan Rumampuk
+ID Dicoding: FC525D5Y0080
+
+API Key yang digunakan:
+1. OpenStreetMap - Tidak memerlukan API key
+2. Esri World Imagery - Tidak memerlukan API key
+3. OpenTopoMap - Tidak memerlukan API key
+
+Catatan:
+- Aplikasi menggunakan layanan peta yang tidak memerlukan API key
+- Semua tile layer yang digunakan bersifat open source dan gratis
+- Tidak ada batasan penggunaan untuk layanan peta yang digunakan 
+
+Deployment URL: https://story-app-9d775.web.app 
