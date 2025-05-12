@@ -30,7 +30,7 @@ A Single-Page Application (SPA) for sharing stories with location data, built us
    ```bash
    npm start
    ```
-2. Open your browser and navigate to `http://localhost:9000`
+2. Open your browser and navigate to `(https://story-app-9d775.web.app)`
 
 ## Building for Production
 
